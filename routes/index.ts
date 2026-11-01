@@ -7,7 +7,7 @@ import { createProxyMiddleware } from 'http-proxy-middleware';
 const services = {
   docker:      { url: 'http://localhost:3001', prefix: '/api/docker' },
   leaderboard: { url: 'http://localhost:3002', prefix: '/api/leaderboard' },
-  chat:        { url: 'http://localhost:3003', prefix: '/api/chat', ws: true },
+  chat:        { url: 'http://chat-backend:3003', prefix: '/api/chat', ws: true },
 } satisfies Record<string, { url: string; prefix: string; ws?: boolean }>;
 
 var router = express.Router();

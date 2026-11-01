@@ -12,6 +12,7 @@
     "express": "^4.22.3",
     "http-errors": "~1.6.3",
     "http-proxy-middleware": "^4.2.1",
+    "tsx": "^4.23.15",
     "morgan": "^1.12.1"
   },
   "devDependencies": {
@@ -22,7 +23,6 @@
     "@types/http-errors": "^2.0.5",
     "@types/morgan": "^1.9.10",
     "@types/node": "^26.6.5",
-    "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   }
 }
