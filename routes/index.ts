@@ -5,9 +5,9 @@ import { createProxyMiddleware } from 'http-proxy-middleware';
 
 // DEV ONLY: no auth, no tokens. Just routes /api/<name>/* to each backend.
 const services = {
-  docker:      { url: 'http://localhost:3001', prefix: '/api/docker' },
-  leaderboard: { url: 'http://localhost:3002', prefix: '/api/leaderboard' },
-  chat:        { url: 'http://chat-backend:3003', prefix: '/api/chat', ws: true },
+  docker:      { url: 'http://docker-backend:3000', prefix: '/api/docker' },
+  leaderboard: { url: 'http://leaderboard-backend:3000', prefix: '/api/leaderboard' },
+  chat:        { url: 'http://chat-backend:3000', prefix: '/api/chat', ws: true },
 } satisfies Record<string, { url: string; prefix: string; ws?: boolean }>;
 
 var router = express.Router();
