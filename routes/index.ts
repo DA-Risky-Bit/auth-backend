@@ -11,7 +11,18 @@ const services = {
 } satisfies Record<string, { url: string; prefix: string; ws?: boolean }>;
 
 var router = express.Router();
-router.use(cors({ origin: process.env.FRONTEND_ORIGIN ?? 'http://localhost:5173', credentials: true }));
+
+const allowed = [
+  'http://admin.localhost',
+  'http://chat.localhost',
+  'http://app.localhost',
+  'http://localhost:5173',
+];
+
+router.use(cors({
+  origin: (origin, cb) => cb(null, !origin || allowed.includes(origin)),
+  credentials: true,
+}));
 
 const wsProxies: Array<{ mount: string; proxy: ReturnType<typeof createProxyMiddleware> }> = [];
 
