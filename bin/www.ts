@@ -5,27 +5,23 @@
 import http from 'http';
 import debugLib from 'debug';
 import app from '../app';
+import { migrate } from '../config/migrate';
+import { wsProxies } from '../routes/proxy';
+import { Socket } from 'node:net';
 
 const debug = debugLib('auth-backend:server');
 
 /**
  * Get port from environment and store in Express.
  */
-
 const port = normalizePort(process.env.PORT ?? '3000');
 app.set('port', port);
 
 /**
  * Create HTTP server.
  */
-
 const server = http.createServer(app);
 
-/**
- * Listen on provided port, on all network interfaces.
- */
-
-server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
 
@@ -36,9 +32,26 @@ server.on('upgrade', (req, socket, head) => {
 });
 
 /**
+ * Initialize database migrations and start the server.
+ */
+async function startServer() {
+  try {
+    console.log('Running database migrations...');
+    await migrate();
+    console.log('Migrations completed successfully.');
+
+    server.listen(port);
+  } catch (error) {
+    console.error('Failed to start server due to migration error:', error);
+    process.exit(1);
+  }
+}
+
+startServer();
+
+/**
  * Normalize a port into a number or string (named pipe).
  */
-
 function normalizePort(val: string): string | number {
   const parsed = parseInt(val, 10);
 
@@ -58,7 +71,6 @@ function normalizePort(val: string): string | number {
 /**
  * Event listener for HTTP server "error" event.
  */
-
 function onError(error: NodeJS.ErrnoException): void {
   if (error.syscall !== 'listen') {
     throw error;
@@ -84,7 +96,6 @@ function onError(error: NodeJS.ErrnoException): void {
 /**
  * Event listener for HTTP server "listening" event.
  */
-
 function onListening(): void {
   const addr = server.address();
   const bind = typeof addr === 'string' ? `pipe ${addr}` : `port ${addr?.port}`;
