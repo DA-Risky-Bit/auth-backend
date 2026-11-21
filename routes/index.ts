@@ -1,6 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import type { Socket } from 'net';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 
 // DEV ONLY: no auth, no tokens. Just routes /api/<name>/* to each backend.
