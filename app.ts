@@ -5,12 +5,12 @@ import logger from 'morgan';
 const app = express();
 import indexRouter from './routes/index';
 
+app.use('/', indexRouter);
+
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-
-app.use('/', indexRouter);
 
 // catch 404 and forward to error handler
 app.use((req: Request, res: Response, next: NextFunction) => {
