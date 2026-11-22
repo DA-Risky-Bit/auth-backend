@@ -5,8 +5,8 @@ import {
   createUser,
   updateUser,
   deleteUser
-} from '../controllers/user';
-import { authenticateToken, requireAdmin } from '../middleware';
+} from '../controllers/user.js';
+import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 
 const router = Router();
 

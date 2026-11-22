@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import * as userService from '../service/user';
+import * as userService from '../service/user.js';
 
 // Extend Express Request interface if not already defined globally
 interface AuthenticatedRequest extends Request {

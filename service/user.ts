@@ -1,5 +1,5 @@
-import pool from '../config/db';
-import { UserAdmin, UserProfilePublic, UserProfileDetailed } from '../models/user';
+import pool from '../config/db.js';
+import { UserAdmin, UserProfilePublic, UserProfileDetailed } from '../models/user.js';
 
 /**
  * Retrieves a paginated list of all users from the database.

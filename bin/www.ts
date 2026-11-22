@@ -1,13 +1,13 @@
-/**
- * Module dependencies.
- */
-
 import http from 'http';
 import debugLib from 'debug';
-import app from '../app';
-import { migrate } from '../config/migrate';
-import { wsProxies } from '../routes/proxy';
-import { Socket } from 'node:net';
+import app from '../app.js';
+import { wsProxies } from '../routes/proxy.js';
+
+import * as cookie from "cookie";
+import jwt from 'jsonwebtoken';
+
+import { ALLOWED, JWT_SECRET } from '../config/vars.js';
+
 
 const debug = debugLib('auth-backend:server');
 
@@ -25,10 +25,27 @@ const server = http.createServer(app);
 server.on('error', onError);
 server.on('listening', onListening);
 
+
 server.on('upgrade', (req, socket, head) => {
-  const match = wsProxies.find(({ mount }) => req.url?.startsWith(mount));
-  if (match) match.proxy.upgrade?.(req, socket as Socket, head);
-  else socket.destroy();
+  const reject = () => { socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n'); socket.destroy(); };
+
+  if (!ALLOWED.has(req.headers.origin ?? '')) return reject();
+
+  try {
+    const cookies = cookie.parseCookie(req.headers.cookie ?? '');
+    const session = cookies?.session;
+
+    if (!session || typeof session !== 'string') {
+      throw new Error('Unauthorized: Missing session token');
+    }
+
+    const user = jwt.verify(session, JWT_SECRET, { algorithms: ['HS256'] }) as any;
+    (req as any).user = { id: user.id, email: user.email, role: user.role };
+  } catch { return reject(); }
+
+  const match = wsProxies.find(p => req.url?.startsWith(p.mount));
+  if (!match) return socket.destroy();
+  (match.proxy as any).upgrade(req, socket, head);
 });
 
 /**
@@ -36,10 +53,6 @@ server.on('upgrade', (req, socket, head) => {
  */
 async function startServer() {
   try {
-    console.log('Running database migrations...');
-    await migrate();
-    console.log('Migrations completed successfully.');
-
     server.listen(port);
   } catch (error) {
     console.error('Failed to start server due to migration error:', error);

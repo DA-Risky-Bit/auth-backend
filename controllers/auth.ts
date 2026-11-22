@@ -1,8 +1,28 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import * as userService from '../service/user';
+import * as userService from '../service/user.js';
+import { JWT_SECRET, SESSION_MS } from '../config/vars.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secure_secret_key';
+
+const cookieOpts = {
+  httpOnly: true,
+  secure: true,
+  sameSite: 'none' as const,
+  path: '/',
+  partitioned: true,
+  domain: process.env.COOKIE_DOMAIN,
+};
+
+const issueSession = (res: Response, user: { id: number; email: string; role: number }) => {
+  console.log('issueSession user:', user);
+  if (user?.id == null) throw new Error('issueSession: user has no id');
+  const token = jwt.sign(
+    { id: user.id, email: user.email, role: user.role },
+    JWT_SECRET,
+    { expiresIn: '24h' }
+  );
+  res.cookie('session', token, { ...cookieOpts, maxAge: SESSION_MS });
+};
 
 /**
  * Registers a new user and returns a JWT token.
@@ -21,13 +41,8 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
 
     const newUser = await userService.createUser(email, username, password);
 
-    const token = jwt.sign(
-      { id: newUser.id, email: newUser.email, role: newUser.role },
-      JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    return res.status(201).json({ user: newUser, token });
+    issueSession(res, newUser);
+    return res.status(201).json({ user: newUser });
   } catch (error: any) {
     // Specific error handling for database unique conflicts (e.g., duplicate email)
     if (error.code === '23505') {
@@ -38,6 +53,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
     return next(error);
   }
 };
+
 
 /**
  * Authenticates user credentials and returns a JWT token.
@@ -59,15 +75,38 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
       return res.status(404).json({ message: 'User account not found' });
     }
 
-    const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
-      JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    return res.status(200).json({ user, token });
+    issueSession(res, user);
+    return res.status(200).json({ user });
   } catch (error) {
     // Pass unexpected/server errors to global middleware
+    return next(error);
+  }
+};
+
+export const logout = (_req: Request, res: Response) => {
+  res.clearCookie('session', cookieOpts);
+  res.set('Cache-Control', 'no-store');
+  return res.status(204).end();
+};
+
+export const me = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const sessionUser = (req as any).user as { id?: number } | undefined;
+    if (sessionUser?.id == null) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    // Load fresh data from the DB; the JWT only holds id/email/role
+    const user = await userService.getDetailedById(sessionUser.id); // returns User
+    if (!user || user.deleted) {
+      res.clearCookie('session', cookieOpts);
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+    const { id, username, email, role } = user;
+
+    res.set('Cache-Control', 'no-store');
+    return res.status(200).json({ user: { id, username, email, role } });
+  } catch (error) {
     return next(error);
   }
 };

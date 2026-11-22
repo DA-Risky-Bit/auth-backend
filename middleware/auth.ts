@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { JWT_SECRET } from '../config/vars.js';
 
 export interface AuthenticatedRequest extends Request {
   user?: {
@@ -9,24 +10,23 @@ export interface AuthenticatedRequest extends Request {
   };
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secure_secret_key';
 
 /**
  * Middleware to verify JWT tokens and protect routes.
  */
 export const authenticateToken = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // Bearer <token>
+  const token = req.cookies?.session;
 
   if (!token) {
-    return res.status(401).json({ message: 'Access token missing or invalid' });
+    return res.status(401).json({ message: 'Not authenticated' });
   }
 
-  jwt.verify(token, JWT_SECRET, (err, user) => {
+  jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }, (err, payload) => {
     if (err) {
-      return res.status(403).json({ message: 'Token is invalid or expired' });
+      return res.status(401).json({ message: 'Session is invalid or expired' });
     }
-    req.user = user as AuthenticatedRequest['user'];
+    const { id, email, role } = payload as AuthenticatedRequest['user'] & jwt.JwtPayload;
+    req.user = { id, email, role };
     next();
   });
 };
