@@ -24,9 +24,6 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
 };
 
-
-app.use('/', proxyRoutes);
-
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -37,9 +34,9 @@ app.options('*', cors(corsOptions));
 app.get('/api/auth/csrf', issueCsrf);
 app.use('/api', csrfGuard);
 
-app.use('/', proxyRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/', proxyRoutes);
 
 // 404 error handler
 app.use((req, res, next) => next(createError(404)));
