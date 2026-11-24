@@ -6,6 +6,7 @@ const app = express();
 import proxyRoutes from './routes/proxy.js';
 import authRoutes from './routes/auth.js'
 import userRoutes from './routes/user.js';
+import codeRouters from './routes/code.js';
 import cors from 'cors';
 import { csrfGuard, issueCsrf } from './middleware/csrf.js';
 import { ALLOWED } from './config/vars.js';
@@ -36,6 +37,7 @@ app.use('/api', csrfGuard);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/code', codeRouters);
 app.use('/', proxyRoutes);
 
 // 404 error handler
