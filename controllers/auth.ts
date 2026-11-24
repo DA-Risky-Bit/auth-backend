@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import * as userService from '../service/user.js';
+import * as codeService from '../service/code.js';
 import { JWT_SECRET, SESSION_MS } from '../config/vars.js';
 
 
@@ -29,7 +30,7 @@ const issueSession = (res: Response, user: { id: number; email: string; role: nu
  */
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { username, email, password } = req.body;
+    const { username, email, password, code } = req.body;
     if (!username || !email || !password) {
       return res.status(400).json({ message: 'Username, email, and password are required' });
     }
@@ -37,6 +38,16 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
     // Specific business rule check example: password strength
     if (password.length < 6) {
       return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+    }
+
+    if (!code) {
+      return res.status(401).json({ message: 'Lobby Code needed to register' })
+    }
+
+    const code_db = await codeService.getLobbyCode();
+
+    if (code !== code_db) {
+      return res.status(401).json({ message: 'Lobby Code invalid, please request a new one from your admin' })
     }
 
     const newUser = await userService.createUser(email, username, password);

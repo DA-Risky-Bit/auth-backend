@@ -6,10 +6,11 @@ const app = express();
 import proxyRoutes from './routes/proxy.js';
 import authRoutes from './routes/auth.js'
 import userRoutes from './routes/user.js';
-import codeRouters from './routes/code.js';
+import codeRoutes from './routes/code.js';
 import cors from 'cors';
 import { csrfGuard, issueCsrf } from './middleware/csrf.js';
 import { ALLOWED } from './config/vars.js';
+import { authenticateToken, requireAdmin } from './middleware/auth.js';
 
 const corsOptions = {
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
@@ -35,9 +36,9 @@ app.options('*', cors(corsOptions));
 app.get('/api/auth/csrf', issueCsrf);
 app.use('/api', csrfGuard);
 
-app.use('/api/auth', authRoutes);
+app.use('/api/auth',  authRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/code', codeRouters);
+app.use('/api/code',  codeRoutes, authenticateToken, requireAdmin);
 app.use('/', proxyRoutes);
 
 // 404 error handler
